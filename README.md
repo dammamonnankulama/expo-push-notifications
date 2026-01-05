@@ -1,4 +1,12 @@
-# Welcome to your Expo app 👋
+# Welcome to simple Expo app 👋
+
+## 🚀 Features
+
+- **Push Notification Registration** - Seamless Expo push token generation
+- **Device Management** - Register, unregister, and track user devices
+- **Cross-Platform Support** - Works on both iOS and Android
+- **Secure Token Storage** - Uses Expo SecureStore for sensitive data
+- **Type-Safe** - Full TypeScript implementation
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
@@ -25,26 +33,64 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+## ⚙️ Installation
 
-When you're ready, run:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/expo-push-notifications.git
+   cd expo-push-notifications
+   ```
 
-```bash
-npm run reset-project
-```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+3. Configure EAS project:
+   ```bash
+   npx eas login
+   npx eas project:init
+   ```
 
-## Learn more
+4. Update `app.json` with your EAS project ID:
+   ```json
+   {
+     "expo": {
+       "extra": {
+         "eas": {
+           "projectId": "your-project-id"
+         }
+       }
+     }
+   }
+   ```
 
-To learn more about developing your project with Expo, look at the following resources:
+5. Start the development server:
+   ```bash
+   npx expo start
+   ```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 🛠️ Tech Stack
 
-## Join the community
+- [Expo](https://expo.dev/) - React Native framework
+- [Expo Router](https://docs.expo.dev/router/introduction/) - File-based routing
+- [Expo Notifications](https://docs.expo.dev/push-notifications/overview/) - Push notification handling
+- [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) - Secure storage
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Axios](https://axios-http.com/) - HTTP client
 
-Join our community of developers creating universal apps.
+## 📋 Prerequisites
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Node.js (v18 or higher)
+- Expo CLI
+- EAS CLI (for push notifications)
+- Physical device (push notifications don't work on simulators)
+
+ ## 🧪 Testing Push Notifications
+
+Use [Expo's Push Notification Tool](https://expo.dev/notifications) to test notifications with your device's push token.
+
+## 📄 License
+
+This project is licensed under the MIT License.
+

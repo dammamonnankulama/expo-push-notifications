@@ -1,98 +1,189 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, Text, View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { useNotifications } from '@/hooks/useNotifications';
+import { colors, spacing, typography, globalStyles } from '@/styles/theme';
+import { NotificationDisplay } from '@/components/NotificationDisplay';
+import { DeviceInfo } from '@/components/DeviceInfo';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const DEFAULT_API_URL = 'http://192.168.1.6:8080';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const {
+    expoPushToken,
+    notification,
+    registrationStatus,
+    isAuthenticated,
+    handleLogin,
+    handleLogout,
+  } = useNotifications(DEFAULT_API_URL);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const [phoneNumber, setPhoneNumber] = useState(''); // Changed
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const onLogin = async () => {
+    if (!phoneNumber || !password) {
+      alert('Please enter phone number and password');
+      return;
+    }
+
+    setIsLoading(true);
+    const success = await handleLogin(phoneNumber, password);
+    setIsLoading(false);
+
+    if (success) {
+      alert('Login successful! Device registered automatically.');
+      setPhoneNumber(''); // Clear fields
+      setPassword('');
+    } else {
+      alert('Login failed. Please check your credentials.');
+    }
+  };
+
+  return (
+    <ScrollView style={globalStyles.container}>
+      <View style={globalStyles.content}>
+        <Text style={styles.title}>Play Zone Notifications</Text>
+
+        {!isAuthenticated ? (
+          <View style={styles.loginContainer}>
+            <Text style={styles.label}>Login to Enable Notifications</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number (e.g., +1234567890)"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+              autoCapitalize="none"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+
+            <TouchableOpacity
+              style={[styles.button, isLoading && styles.buttonDisabled]}
+              onPress={onLogin}
+              disabled={isLoading}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading ? 'Logging in...' : 'Login'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.statusContainer}>
+            <Text style={styles.statusText}>✅ Logged In</Text>
+            <Text style={styles.statusSubtext}>{registrationStatus}</Text>
+
+            {expoPushToken && (
+              <View style={styles.tokenContainer}>
+                <Text style={styles.tokenLabel}>Push Token:</Text>
+                <Text style={styles.tokenText} numberOfLines={1}>
+                  {expoPushToken.substring(0, 30)}...
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.button, styles.logoutButton]}
+              onPress={handleLogout}
+            >
+              <Text style={styles.buttonText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <NotificationDisplay notification={notification} />
+        <DeviceInfo />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  title: {
+    fontSize: typography.title.fontSize,
+    fontWeight: typography.title.fontWeight,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+    color: colors.text,
+  },
+  loginContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: spacing.md,
+    color: colors.text,
+  },
+  input: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: spacing.md,
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  buttonDisabled: {
+    opacity: 0.5,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  buttonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    backgroundColor: colors.error,
+    marginTop: spacing.md,
+  },
+  statusContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  statusText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.success,
+    marginBottom: spacing.sm,
+  },
+  statusSubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  tokenContainer: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+  },
+  tokenLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  tokenText: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: colors.text,
   },
 });

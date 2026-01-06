@@ -13,6 +13,7 @@ export interface DeviceRegistrationRequest {
 
 export class NotificationService {
   private baseUrl: string;
+  private timeout: number = 30000;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -60,7 +61,7 @@ export class NotificationService {
 
     try {
       const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-      
+
       if (!projectId) {
         console.error('No project ID found. Run: npx eas init');
         return null;
@@ -80,8 +81,14 @@ export class NotificationService {
 
   async registerDevice(data: DeviceRegistrationRequest): Promise<boolean> {
     try {
+      const accessToken = await SecureStore.getItemAsync('accessToken');
+      if (!accessToken) {
+        console.warn('No access token - skipping device registration');
+        return false;
+      }
+
       const headers = await this.getAuthHeaders();
-      
+
       const response = await axios.post(
         `${this.baseUrl}/api/devices/register`,
         {
@@ -89,48 +96,73 @@ export class NotificationService {
           deviceType: data.deviceType,
           deviceName: data.deviceName,
         },
-        { headers }
+        { 
+          headers,
+          timeout: this.timeout,
+        }
       );
-      
+
       console.log('Device registered successfully:', response.data);
-      return response.status === 200;
+      return response.status === 200 || response.status === 201;
     } catch (error: any) {
       console.error('Device registration error:', error.response?.data || error.message);
-      throw error;
+      return false;
     }
   }
 
   async unregisterDevice(expoPushToken: string): Promise<boolean> {
     try {
+      const accessToken = await SecureStore.getItemAsync('accessToken');
+      if (!accessToken) {
+        console.warn('No access token - skipping device unregistration');
+        return false;
+      }
+
       const headers = await this.getAuthHeaders();
-      
+
       const response = await axios.post(
         `${this.baseUrl}/api/devices/unregister`,
         { expoPushToken },
-        { headers }
+        { 
+          headers,
+          timeout: this.timeout,
+        }
       );
-      
+
       console.log('Device unregistered successfully');
       return response.status === 200;
     } catch (error: any) {
+      if (error.response?.status === 401) {
+        console.warn('Token expired during unregister - continuing with logout');
+        return false;
+      }
       console.error('Device unregister error:', error.response?.data || error.message);
-      throw error;
+      return false;
     }
   }
 
   async getMyDevices() {
     try {
+      const accessToken = await SecureStore.getItemAsync('accessToken');
+      if (!accessToken) {
+        console.warn('No access token - cannot get devices');
+        return [];
+      }
+
       const headers = await this.getAuthHeaders();
-      
+
       const response = await axios.get(
         `${this.baseUrl}/api/devices/my-devices`,
-        { headers }
+        { 
+          headers,
+          timeout: this.timeout,
+        }
       );
-      
-      return response.data.devices;
+
+      return response.data.devices || [];
     } catch (error: any) {
       console.error('Get devices error:', error.response?.data || error.message);
-      throw error;
+      return [];
     }
   }
 }

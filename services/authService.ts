@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 export interface LoginCredentials {
-  phoneNumber: string; 
+  phoneNumber: string;
   password: string;
 }
 
@@ -31,6 +31,7 @@ export class AuthService {
           headers: {
             'Content-Type': 'application/json',
           },
+          timeout: 30000, 
         }
       );
 
@@ -63,23 +64,33 @@ export class AuthService {
               'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json',
             },
+            timeout: 30000,
           }
         );
       }
     } catch (error) {
       console.error('Logout API error:', error);
     } finally {
-      await SecureStore.deleteItemAsync('accessToken');
-      await SecureStore.deleteItemAsync('refreshToken');
+      await this.clearAllTokens();
     }
   }
 
   async getAccessToken(): Promise<string | null> {
-    return await SecureStore.getItemAsync('accessToken');
+    try {
+      return await SecureStore.getItemAsync('accessToken');
+    } catch (error) {
+      console.error('Error getting access token:', error);
+      return null;
+    }
   }
 
   async getRefreshToken(): Promise<string | null> {
-    return await SecureStore.getItemAsync('refreshToken');
+    try {
+      return await SecureStore.getItemAsync('refreshToken');
+    } catch (error) {
+      console.error('Error getting refresh token:', error);
+      return null;
+    }
   }
 
   async isAuthenticated(): Promise<boolean> {
@@ -102,6 +113,7 @@ export class AuthService {
           headers: {
             'Content-Type': 'application/json',
           },
+          timeout: 30000,
         }
       );
 
@@ -115,7 +127,25 @@ export class AuthService {
       return { accessToken, refreshToken: newRefreshToken, expiresIn };
     } catch (error) {
       console.error('Token refresh error:', error);
+     
+      await this.clearAllTokens();
       return null;
     }
+  }
+
+  async clearAllTokens(): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync('accessToken');
+      await SecureStore.deleteItemAsync('refreshToken');
+      console.log('All tokens cleared successfully');
+    } catch (error) {
+      console.error('Error clearing tokens:', error);
+    }
+  }
+
+  async hasStoredTokens(): Promise<boolean> {
+    const accessToken = await this.getAccessToken();
+    const refreshToken = await this.getRefreshToken();
+    return !!(accessToken || refreshToken);
   }
 }

@@ -5,7 +5,7 @@ import { colors, spacing, typography, globalStyles } from '@/styles/theme';
 import { NotificationDisplay } from '@/components/NotificationDisplay';
 import { DeviceInfo } from '@/components/DeviceInfo';
 
-const DEFAULT_API_URL = 'http://192.168.8.101:8080';
+const DEFAULT_API_URL = 'http://192.168.1.6:8080';
 
 export default function HomeScreen() {
   const {
